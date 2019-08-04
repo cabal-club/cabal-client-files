@@ -1,0 +1,31 @@
+{
+  "name": "cabal-client-files",
+  "version": "1.0.0",
+  "description": "Plugin for cabal clients for message file attachments shared via dat",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cabal-club/cabal-client-files.git"
+  },
+  "keywords": [
+    "dat",
+    "cabal",
+    "p2p"
+  ],
+  "author": "Cabal Club",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/cabal-club/cabal-client-files/issues"
+  },
+  "homepage": "https://github.com/cabal-club/cabal-client-files#readme",
+  "dependencies": {
+    "dat-node": "^3.5.15",
+    "mkdirp": "^0.5.1"
+  },
+  "devDependencies": {
+    "standard": "^13.1.0"
+  }
+}
