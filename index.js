@@ -19,7 +19,12 @@ CabalClientFiles.prototype.getDatKeyFromStoragePath = function (userKey) {
   return new Promise(function (resolve, reject) {
     var storagePath = self.storagePath(userKey)
     if (fs.existsSync(storagePath)) {
-      Hyperdrive(storagePath, { sparse: true }, function (err, hyperdrive) {
+      var opts = {
+        sparse: false,
+        upload: true,
+        download: true
+      }
+      Hyperdrive(storagePath, opts, function (err, hyperdrive) {
         if (err) {
           resolve(err)
         }
@@ -68,7 +73,11 @@ CabalClientFiles.prototype.seed = function (datData) {
   return new Promise(function (resolve, reject) {
     var storagePath = self.storagePath(datData.userKey)
     mkdirp.sync(storagePath)
-    var datArgs = { sparse: true }
+    var datArgs = {
+      sparse: false,
+      upload: true,
+      download: true
+    }
     console.warn('===> Seed: start', { datData })
     if (datData.datKey) {
       datArgs.key = datData.datKey
@@ -77,23 +86,27 @@ CabalClientFiles.prototype.seed = function (datData) {
         if (hyperdrive.network.connected) {
           // Return if already connected swarm of this dat
           console.warn('===> Seed: already connected', { datKey: datData.datKey })
+          datData.hyperdrive = hyperdrive
           resolve(datData)
         }
       } else {
         self.hyperdrives.set(datData.datKey, undefined)
       }
     }
-    Hyperdrive(storagePath, datArgs, function (err, dat) {
+    Hyperdrive(storagePath, datArgs, function (err, hyperdrive) {
       if (err) throw reject(err)
-      var datKey = dat.key.toString('hex')
-      self.hyperdrives.set(datKey, dat)
+      var datKey = hyperdrive.key.toString('hex')
       console.warn('===> Seed: joining Network.....', datKey)
-      dat.joinNetwork(function () {
+      self.hyperdrives.set(datKey, hyperdrive)
+      hyperdrive.joinNetwork(function () {
         datData.datKey = datKey
-        console.warn('===> Seed: joined Network', { datKey, dat })
+        datData.hyperdrive = hyperdrive
+        console.warn('===> Seed: joined Network', { datKey, hyperdrive })
         resolve(datData)
       })
-      // dat.on('connection', connection, info)
+      // hyperdrive.network.on('connection', function (connection, info) {
+      //  console.warn('===> Dat: on connection', { connection, info })
+      // })
       // var stats = dat.trackStats()
       // var peers = stats.peers
     })
@@ -138,16 +151,21 @@ CabalClientFiles.prototype.fetch = async function (arg) {
   if (!hyperdrive) {
     console.warn('===> Fetch: connecting...', { arg })
     datData = await self.seed(datData)
+    hyperdrive = datData.hyperdrive
   }
   return new Promise(function (resolve, reject) {
-    var dat = self.hyperdrives.get(datData.datKey)
-    if (dat) {
-      var storagePath = self.storagePath(arg.userKey)
-      datData.archive = dat.archive
-      datData.localPath = storagePath + arg.fileName
-    }
-    console.warn('===> FETCH', { datData, dat })
-    resolve(datData)
+    var storagePath = self.storagePath(arg.userKey)
+    datData.archive = hyperdrive.archive
+    datData.localPath = storagePath + arg.fileName
+
+    hyperdrive.archive.readFile(arg.fileName, function (err, content) {
+      if (err) {
+        reject(err)
+      }
+      datData.content = content
+      console.warn('===> Fetch: readfile...', content)
+      resolve(datData)
+    })
   })
 }
 
