@@ -20,6 +20,14 @@ cabalFiles = CabalFiles({
 var path = [local filesystem path to file]
 var datKey = await cabalFiles.getDatKeyFromStoragePath(userKey)
 let publishData = await cabalFiles.publish({ datKey, name, path, userKey: user.key })
+cabal.publish({
+  type: 'chat/file',
+  content: {
+    channel,
+    text: text || 'dat://' + publishData.datKey + '/' + publishData.datFileName,
+    file: { key: publishData.datKey, name: publishData.datFileName, size, type }
+  }
+})
 
 
 ## Swarm and download and get path to local dat file from a cabal message
